@@ -19,9 +19,7 @@
           name = "reports";
           runtimeInputs = [
             pkgs.dmarc-report-converter
-            pkgs.gnutar
             pkgs.python3
-            pkgs.unzip
           ];
           text = (builtins.readFile ./reports.sh);
         };
