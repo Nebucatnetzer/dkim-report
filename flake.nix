@@ -2,36 +2,42 @@
   description = "A simple flake to generate DKIM reports.";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    flake-utils.url = "github:numtide/flake-utils";
   };
-
   outputs =
+    { self, nixpkgs }:
+    let
+      systems = [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "x86_64-linux"
+      ];
+      forEachSystem = nixpkgs.lib.genAttrs systems;
+    in
     {
-      self,
-      nixpkgs,
-      flake-utils,
-    }:
-    flake-utils.lib.eachDefaultSystem (
-      system:
-      let
-        pkgs = nixpkgs.legacyPackages.${system};
-        reports = pkgs.writeShellApplication {
-          name = "reports";
-          runtimeInputs = [
-            pkgs.dmarc-report-converter
-            pkgs.python3
-          ];
-          text = (builtins.readFile ./reports.sh);
-        };
-      in
-      {
-        packages.dkim-report = reports;
-        packages.default = reports;
-        apps.dkim-report = {
+      packages = forEachSystem (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        {
+          dkim-report = pkgs.writeShellApplication {
+            name = "reports";
+            runtimeInputs = [
+              pkgs.dmarc-report-converter
+              pkgs.python3
+            ];
+            text = (builtins.readFile ./reports.sh);
+          };
+          default = self.packages.${system}.dkim-report;
+        }
+      );
+      apps = forEachSystem (system: {
+        dkim-report = {
           type = "app";
           program = "${self.packages.${system}.dkim-report}/bin/reports";
         };
-        apps.default = self.apps.${system}.dkim-report;
-      }
-    );
+        default = self.apps.${system}.dkim-report;
+      });
+    };
 }
