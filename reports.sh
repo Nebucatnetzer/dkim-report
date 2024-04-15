@@ -1,5 +1,5 @@
 WORKDIR=$(pwd)
-PORT=8080
+PORT=9090
 mkdir -p "$WORKDIR"/xml
 mkdir -p "$WORKDIR"/html
 
